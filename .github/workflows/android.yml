@@ -1,34 +1,29 @@
-name: Android CI
+
+name: Build Android APK
 
 on:
-  pull_request:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
-  instrumentation-tests:
-    if: github.event.pull_request.draft == false
-    runs-on: [ self-hosted, Android ]
+  build:
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout the code
-        uses: actions/checkout@v5.0.0
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build APK with Buildozer
+        uses: ArtemSBulgakov/buildozer-action@v1
         with:
-          token: ${{ github.token }}
-          submodules: recursive
+          workdir: .
+          buildozer_version: stable
+          command: buildozer android debug
 
-      # Setup Gradle and run Build
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      - name: Clean gradle cache
-        run: ./gradlew clean
-
-      - name: Build with Gradle
-        run: ./gradlew build
-
-      # Run tests
-      - name: Run Unit tests
-        run: ./gradlew testDebugUnitTest --stacktrace
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: weatherApp-apk
+          path: bin/*.apk
